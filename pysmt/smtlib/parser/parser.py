@@ -1071,6 +1071,8 @@ class SmtLibParser(object):
             res = self.env.type_manager.BOOL()
         elif var == "Int":
             res = self.env.type_manager.INT()
+        elif var == "Nat":
+            res = self.env.type_manager.INT()
         elif var == "Real":
             res = self.env.type_manager.REAL()
         elif var == "String":
