@@ -340,7 +340,7 @@ class SmtLibParser(object):
                 get_free_variables = self.env.fvo.get_free_variables
                 changed = False
                 for x in args:
-                    if self.get_type(x).is_int_type() and len(get_free_variables(x)) == 0:
+                    if (self.get_type(x).is_int_type() or self.get_type(x).is_nat_type() ) and len(get_free_variables(x)) == 0:
                         new_args.append(mgr.ToReal(x))
                         changed = True
                     else:
@@ -1073,6 +1073,7 @@ class SmtLibParser(object):
             res = self.env.type_manager.INT()
         elif var == "Nat":
             res = self.env.type_manager.INT()
+            res = self.env.type_manager.NAT()
         elif var == "Real":
             res = self.env.type_manager.REAL()
         elif var == "String":

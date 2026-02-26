@@ -21,7 +21,7 @@ import pysmt
 import pysmt.smtlib
 from pysmt.operators import (FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF,
                              SYMBOL, FUNCTION,
-                             REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT,
+                             REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, NAT_CONSTANT,
                              PLUS, MINUS, TIMES, DIV,
                              LE, LT, EQUALS,
                              ITE,
@@ -46,7 +46,7 @@ from pysmt.operators import  (BOOL_OPERATORS, THEORY_OPERATORS,
                               STR_OPERATORS,
                               RELATIONS, CONSTANTS)
 
-from pysmt.typing import BOOL, REAL, INT, BVType, STRING
+from pysmt.typing import BOOL, REAL, INT, NAT, BVType, STRING
 from pysmt.decorators import deprecated, assert_infix_enabled
 from pysmt.utils import twos_complement
 from pysmt.constants import is_python_integer
@@ -159,6 +159,8 @@ class FNode(object):
         if _type is not None:
             if _type.is_int_type() and self.node_type() != INT_CONSTANT:
                 return False
+            if _type.is_nat_type() and self.node_type() != NAT_CONSTANT:
+                return False
             if _type.is_real_type() and self.node_type() != REAL_CONSTANT:
                 return False
             if _type.is_bool_type() and self.node_type() != BOOL_CONSTANT:
@@ -195,6 +197,13 @@ class FNode(object):
         Optionally, check that the constant has the given value.
         """
         return self.is_constant(INT, value)
+    
+    def is_nat_constant(self, value=None):
+        """Test whether the formula is a Natural Number constant.
+
+        Optionally, check that the constant has the given value.
+        """
+        return self.is_constant(NAT, value)
 
     def is_bv_constant(self, value=None, width=None):
         """Test whether the formula is a BitVector constant.
@@ -250,10 +259,10 @@ class FNode(object):
         return self.is_bool_constant(False)
 
     def is_one(self):
-        return self.is_real_constant(1) or self.is_int_constant(1)
+        return self.is_real_constant(1) or self.is_int_constant(1) or self.is_nat_constant(1)
 
     def is_zero(self):
-        return self.is_real_constant(0) or self.is_int_constant(0)
+        return self.is_real_constant(0) or self.is_int_constant(0) or self.is_nat_constant(0)
 
     def is_toreal(self):
         """Test whether the node is the ToReal operator."""
@@ -574,6 +583,8 @@ class FNode(object):
         """Return the type of the Constant."""
         if self.node_type() == INT_CONSTANT:
             return INT
+        elif self.node_type == NAT_CONSTANT:
+            return NAT
         elif self.node_type() == REAL_CONSTANT:
             return REAL
         elif self.node_type() == BOOL_CONSTANT:
@@ -706,6 +717,8 @@ class FNode(object):
             return mgr.Bool(arg)
         elif expected_type.is_int_type():
             return mgr.Int(arg)
+        elif expected_type.is_nat_type():
+            return mgr.Nat(arg)
         elif expected_type.is_real_type():
             return mgr.Real(arg)
         else:

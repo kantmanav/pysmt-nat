@@ -24,12 +24,12 @@ these operators.
 from itertools import chain
 
 
-ALL_TYPES = list(range(0,66))
+ALL_TYPES = list(range(0,67)) # Note: I changed this but not all the labels
 
 (
 FORALL, EXISTS, AND, OR, NOT, IMPLIES, IFF, # Boolean Logic (0-6)
 SYMBOL, FUNCTION,                           # Symbols and functions calls (7-8)
-REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, STR_CONSTANT, # Constants (9-12)
+REAL_CONSTANT, BOOL_CONSTANT, INT_CONSTANT, NAT_CONSTANT, STR_CONSTANT, # Constants (9-12)
 PLUS, MINUS, TIMES,                         # LIA/LRA operators (13-15)
 LE, LT, EQUALS,                             # LIA/LRA relations (16-18)
 ITE,                                        # Term-ite (19)
@@ -86,7 +86,7 @@ BOOL_CONNECTIVES = frozenset([AND, OR, NOT, IMPLIES, IFF])
 
 BOOL_OPERATORS = frozenset(QUANTIFIERS | BOOL_CONNECTIVES)
 
-CONSTANTS = frozenset([BOOL_CONSTANT, REAL_CONSTANT, INT_CONSTANT,
+CONSTANTS = frozenset([BOOL_CONSTANT, REAL_CONSTANT, INT_CONSTANT, NAT_CONSTANT,
                        BV_CONSTANT, STR_CONSTANT, ALGEBRAIC_CONSTANT])
 
 # Relations are predicates on theory atoms.
@@ -168,6 +168,7 @@ __OP_STR__ = {
     REAL_CONSTANT : "REAL_CONSTANT",
     BOOL_CONSTANT : "BOOL_CONSTANT",
     INT_CONSTANT : "INT_CONSTANT",
+    NAT_CONSTANT : "NAT_CONSTANT",
     STR_CONSTANT : "STR_CONSTANT",
     PLUS : "PLUS",
     MINUS : "MINUS",

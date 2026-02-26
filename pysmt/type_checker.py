@@ -25,7 +25,7 @@ reasoning about the type of formulae.
 import pysmt.walkers as walkers
 import pysmt.operators as op
 
-from pysmt.typing import BOOL, REAL, INT, BVType, ArrayType, STRING
+from pysmt.typing import BOOL, REAL, INT, NAT, BVType, ArrayType, STRING
 from pysmt.exceptions import PysmtTypeError
 
 
@@ -76,9 +76,12 @@ class SimpleTypeChecker(walkers.DagWalker):
     @walkers.handles(op.PLUS, op.MINUS, op.TIMES, op.DIV)
     def walk_realint_to_realint(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        rval = self.walk_type_to_type(formula, args, REAL, REAL)
-        if rval is None:
-            rval = self.walk_type_to_type(formula, args, INT, INT)
+        rval = self.walk_type_to_type(formula, args, NAT, NAT)
+        if rval is None: 
+            rval = self.walk_type_to_type(formula, args, REAL, REAL)
+            if rval is None:
+                rval = self.walk_type_to_type(formula, args, INT, INT)
+            
         return rval
 
     @walkers.handles(op.BV_ADD, op.BV_SUB, op.BV_NOT, op.BV_AND, op.BV_OR)
@@ -200,7 +203,10 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         if args[0].is_real_type():
             return self.walk_type_to_type(formula, args, REAL, BOOL)
-        return self.walk_type_to_type(formula, args, INT, BOOL)
+        elif args[0].is_int_type() and args[1].is_int_type():
+            return self.walk_type_to_type(formula, args, INT, BOOL)
+        else:
+            return self.walk_type_to_type(formula, args, NAT, BOOL)
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None
@@ -229,6 +235,13 @@ class SimpleTypeChecker(walkers.DagWalker):
         assert formula is not None
         assert len(args) == 0
         return INT
+    
+    @walkers.handles(op.NAT_CONSTANT)
+    def walk_identity_nat(self, formula, args, **kwargs):
+        #pylint: disable=unused-argument
+        assert formula is not None
+        assert len(args) == 0
+        return NAT
 
     @walkers.handles(op.STR_CONSTANT)
     def walk_identity_string(self, formula, args, **kwargs):

@@ -465,6 +465,7 @@ class TypesOracle(walkers.DagWalker):
                          if not x.is_bool_type() and
                          not x.is_int_type() and
                          not x.is_real_type() and
+                         not x.is_nat_type() and
                          not x.is_bv_type() and
                          not x.is_array_type() and
                          not x.is_string_type()

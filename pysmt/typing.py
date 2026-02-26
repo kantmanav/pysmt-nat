@@ -20,6 +20,7 @@
 In the current version these are:
  * Bool
  * Int
+ * Nat
  * Real
  * BVType
  * FunctionType
@@ -77,6 +78,9 @@ class PySMTType(object):
         return False
 
     def is_int_type(self):
+        return False
+
+    def is_nat_type(self):
         return False
 
     def is_bv_type(self, width=None):
@@ -147,6 +151,14 @@ class _IntType(PySMTType):
 
     def is_int_type(self):
         return True
+    
+class _NatType(PySMTType):
+    def __init__(self):
+        decl = _TypeDecl("Nat", 0)
+        PySMTType.__init__(self, decl=decl, args=None)
+
+    def is_nat_type(self):
+        return True   
 
 class _RealType(PySMTType):
     def __init__(self):
@@ -381,6 +393,7 @@ class PartialType(object):
 BOOL = _BoolType()
 REAL = _RealType()
 INT =  _IntType()
+NAT =  _NatType()
 STRING = _StringType()
 PYSMT_TYPES = frozenset([BOOL, REAL, INT])
 
@@ -400,6 +413,7 @@ class TypeManager(object):
         self._bool = None
         self._real = None
         self._int = None
+        self._nat = None
         self._string = None
         #
         self.load_global_types()
@@ -413,6 +427,7 @@ class TypeManager(object):
         self._bool = BOOL
         self._real = REAL
         self._int = INT
+        self._nat = NAT
         self._string = STRING
 
     def BOOL(self):
@@ -423,6 +438,9 @@ class TypeManager(object):
 
     def INT(self):
         return self._int
+    
+    def NAT(self):
+        return self._nat
 
     def STRING(self):
         return self._string
@@ -528,7 +546,7 @@ class TypeManager(object):
         while stack:
             ty = stack.pop()
             if ty.arity == 0:
-                if (ty.is_bool_type() or ty.is_int_type() or
+                if (ty.is_bool_type() or ty.is_int_type() or ty.is_nat_type() or
                     ty.is_real_type() or ty.is_string_type()):
                     myty = ty
                 elif ty.is_bv_type():
