@@ -54,6 +54,13 @@ class SimpleTypeChecker(walkers.DagWalker):
             if x is None or x != type_in:
                 return None
         return type_out
+    
+    def walk_nat_int_to_type(self, formula, args, type_out):
+        assert formula is not None
+        for x in args:
+            if x is None or x not in (NAT, INT):
+                return None
+        return type_out
 
     @walkers.handles(op.AND, op.OR, op.NOT, op.IMPLIES, op.IFF)
     def walk_bool_to_bool(self, formula, args, **kwargs):
@@ -76,12 +83,10 @@ class SimpleTypeChecker(walkers.DagWalker):
     @walkers.handles(op.PLUS, op.MINUS, op.TIMES, op.DIV)
     def walk_realint_to_realint(self, formula, args, **kwargs):
         #pylint: disable=unused-argument
-        rval = self.walk_type_to_type(formula, args, NAT, NAT)
+        rval = self.walk_nat_int_to_type(formula, args, INT)
         if rval is None: 
             rval = self.walk_type_to_type(formula, args, REAL, REAL)
-            if rval is None:
-                rval = self.walk_type_to_type(formula, args, INT, INT)
-            
+
         return rval
 
     @walkers.handles(op.BV_ADD, op.BV_SUB, op.BV_NOT, op.BV_AND, op.BV_OR)
@@ -203,10 +208,10 @@ class SimpleTypeChecker(walkers.DagWalker):
         #pylint: disable=unused-argument
         if args[0].is_real_type():
             return self.walk_type_to_type(formula, args, REAL, BOOL)
-        elif args[0].is_int_type() and args[1].is_int_type():
+        if args[0].is_int_type() and args[1].is_int_type():
             return self.walk_type_to_type(formula, args, INT, BOOL)
-        else:
-            return self.walk_type_to_type(formula, args, NAT, BOOL)
+        res = self.walk_nat_int_to_type(formula, args, BOOL)
+        return res
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None
