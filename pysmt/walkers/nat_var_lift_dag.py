@@ -13,12 +13,12 @@ class NatVarLiftDagWalker(IdentityDagWalker):
         guards = []
         for v in formula.quantifier_vars():
             if v.symbol_type() is NAT:
-                v_new = self.mgr.Symbol(v.symbol_name(), INT)
+                v_new = self.mgr.Symbol(v.symbol_name() + "'", INT)
                 qvars.append(v_new)
-                guards.append(self.walk_le(None, [0, v_new]))
+                guards.append(self.walk_le(None, [self.mgr.Int(0), v_new]))
             else:
                 qvars.append(v)
         if not guards:
             return self.mgr.ForAll(qvars, args[0])
         else:
-            return self.mgr.Forall(qvars, [self.walk_implies(None, [self.walk_and(None, guards), args[0]])])
+            return self.mgr.ForAll(qvars, self.walk_implies(None, [self.walk_and(None, guards), args[0]]))
