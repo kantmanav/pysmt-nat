@@ -22,6 +22,23 @@ class NatVarLiftDagWalker(IdentityDagWalker):
             vars.add(v_new)
         return list(vars), var_subs, guards
 
+    def walk(self, formula, **kwargs):
+        if formula in self.memoization:
+            return self.memoization[formula]
+
+        fvars = list(formula.get_free_variables())
+        fvars, fvar_subs, guards = self.get_nat_guards(fvars)
+        conjuncts = []
+        conjuncts.append(formula.substitute(fvar_subs))
+        conjuncts.extend(guards)
+        formula = self.walk_and(None, conjuncts)
+
+        res = self.iter_walk(formula, **kwargs)
+
+        if self.invalidate_memoization:
+            self.memoization.clear()
+        return res
+
     def walk_forall(self, formula, args, **kwargs):
         qvars = formula.quantifier_vars()
         qvars, qvar_subs, guards = self.get_nat_guards(qvars)
