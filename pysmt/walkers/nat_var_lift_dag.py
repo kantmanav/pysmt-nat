@@ -8,17 +8,24 @@ class NatVarLiftDagWalker(IdentityDagWalker):
                            invalidate_memoization=invalidate_memoization)
         self.mgr = self.env.formula_manager
 
-    def walk_forall(self, formula, args, **kwargs):
-        qvars = []
+    def get_nat_guards(self, formula):
+        qvars = set(formula.quantifier_vars())
+        qvar_subs = {}
         guards = []
-        for v in formula.quantifier_vars():
+        for v in qvars:
             if v.symbol_type() is NAT:
                 v_new = self.mgr.Symbol(v.symbol_name() + "'", INT)
-                qvars.append(v_new)
+                qvar_subs[v] = v_new
                 guards.append(self.walk_le(None, [self.mgr.Int(0), v_new]))
-            else:
-                qvars.append(v)
+        for v, v_new in qvar_subs.items():
+            qvars.remove(v)
+            qvars.add(v_new)
+        return qvars, qvar_subs, guards
+
+    def walk_forall(self, formula, args, **kwargs):
+        qvars, qvar_subs, guards = self.get_nat_guards(formula)
+        qvars = list(qvars)
         if not guards:
             return self.mgr.ForAll(qvars, args[0])
         else:
-            return self.mgr.ForAll(qvars, self.walk_implies(None, [self.walk_and(None, guards), args[0].substitute({v: v_new})]))
+            return self.mgr.ForAll(qvars, self.walk_implies(None, [self.walk_and(None, guards), args[0].substitute(qvar_subs)]))
