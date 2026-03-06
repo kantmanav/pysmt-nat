@@ -21,4 +21,4 @@ class NatVarLiftDagWalker(IdentityDagWalker):
         if not guards:
             return self.mgr.ForAll(qvars, args[0])
         else:
-            return self.mgr.ForAll(qvars, self.walk_implies(None, [self.walk_and(None, guards), args[0]]))
+            return self.mgr.ForAll(qvars, self.walk_implies(None, [self.walk_and(None, guards), args[0].substitute({v: v_new})]))
