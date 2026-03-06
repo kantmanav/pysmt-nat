@@ -201,6 +201,8 @@ class SimpleTypeChecker(walkers.DagWalker):
                                  % str(formula))
         elif args[0].is_bv_type():
             return self.walk_bv_to_bool(formula, args)
+        elif (args[0].is_int_type() and args[1].is_nat_type()) or (args[0].is_nat_type() and args[1].is_int_type()):
+            return self.walk_nat_int_to_type(formula, args, BOOL)
         return self.walk_type_to_type(formula, args, args[0], BOOL)
 
     @walkers.handles(op.LE, op.LT)
@@ -210,8 +212,7 @@ class SimpleTypeChecker(walkers.DagWalker):
             return self.walk_type_to_type(formula, args, REAL, BOOL)
         if args[0].is_int_type() and args[1].is_int_type():
             return self.walk_type_to_type(formula, args, INT, BOOL)
-        res = self.walk_nat_int_to_type(formula, args, BOOL)
-        return res
+        return self.walk_nat_int_to_type(formula, args, BOOL)
 
     def walk_ite(self, formula, args, **kwargs):
         assert formula is not None
