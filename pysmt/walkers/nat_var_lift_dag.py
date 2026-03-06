@@ -29,3 +29,14 @@ class NatVarLiftDagWalker(IdentityDagWalker):
             return self.mgr.ForAll(qvars, args[0])
         else:
             return self.mgr.ForAll(qvars, self.walk_implies(None, [self.walk_and(None, guards), args[0].substitute(qvar_subs)]))
+
+    def walk_exists(self, formula, args, **kwargs):
+        qvars, qvar_subs, guards = self.get_nat_guards(formula)
+        qvars = list(qvars)
+        if not guards:
+            return self.mgr.Exists(qvars, args[0])
+        else:
+            conjuncts = []
+            conjuncts.extend(guards)
+            conjuncts.append(args[0].substitute(qvar_subs))
+            return self.mgr.Exists(qvars, self.walk_and(None, conjuncts))
