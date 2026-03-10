@@ -286,9 +286,14 @@ class SimpleTypeChecker(walkers.DagWalker):
         if len(args) != len(tp.param_types):
             return None
 
-        for (arg, p_type) in zip(args, tp.param_types):
-            if arg != p_type:
-                return None
+        for (idx, (arg, p_type)) in enumerate(zip(args, tp.param_types)):
+            if arg == p_type:
+                continue
+            if p_type.is_nat_type() and arg.is_int_type():
+                child = formula.arg(idx)
+                if child.is_int_constant() and child.constant_value() >= 0:
+                    continue
+            return None
 
         return tp.return_type
 
