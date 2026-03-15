@@ -50,7 +50,7 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
     # Takes args of type R, extracts the nodes and guards for manipulation by walk_* methods
     def _get_child_nodes_and_guards(self, args):
         nodes = [a.node for a in args]
-        guards = tuple(g for a in args for g in a.pending_guards)
+        guards = [g for a in args for g in a.pending_guards]
         return nodes, guards
 
     def walk(self, formula, **kwargs):
@@ -66,6 +66,9 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
         if self.invalidate_memoization:
             self.memoization.clear()
         return res
+
+    def translate(self, formula, **kwargs):
+        return self.walk(formula, **kwargs).node
 
     def walk_symbol(self, formula, args, **kwargs):
         lifted = self._get_lifted_symbol(formula)
@@ -84,7 +87,7 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
             return R(node=self.walk_and(None, guards + [func]), pending_guards=())
         elif old_ret_type is NAT:
             guards.append(self._nat_guard(formula))
-        return R(node=func, pending_guards=guards)
+        return R(node=func, pending_guards=tuple(guards))
 
     def walk_forall(self, formula, args, **kwargs):
         qvars, _, guards = self.get_nat_guards(formula.quantifier_vars())
