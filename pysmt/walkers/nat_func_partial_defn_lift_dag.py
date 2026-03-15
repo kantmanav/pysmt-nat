@@ -1,6 +1,6 @@
 from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.walkers.nat_var_lift_dag import NatVarLiftDagWalker
-from pysmt.typing import INT, NAT, FunctionType
+from pysmt.typing import INT, NAT, BOOL, FunctionType
 from pysmt.fnode import FNode
 from dataclasses import dataclass
 
@@ -47,6 +47,12 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
     def _nat_guard(self, term):
         return self.walk_le(None, [self.mgr.Int(0), term])
 
+    # Takes args of type R, extracts the nodes and guards for manipulation by walk_* methods
+    def _get_child_nodes_and_guards(self, args):
+        nodes = [a.node for a in args]
+        guards = tuple(g for a in args for g in a.pending_guards)
+        return nodes, guards
+
     def walk(self, formula, **kwargs):
         if formula in self.memoization:
             return self.memoization[formula]
@@ -66,13 +72,19 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
         symbol_type = formula.symbol_type()
         if symbol_type.is_function_type() and len(symbol_type.param_types) == 0:
             self._register_global_axiom(formula, lifted)
-        return lifted
+        return R(node=lifted, pending_guards=())
 
-    def walk_function(self, formula, args, guards=None **kwargs):
-        old_name = formula.function_name()
+    def walk_function(self, formula, args, **kwargs):
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+
+        old_name, old_ret_type = formula.function_name(), formula.symbol_type().return_type
         new_name = self._get_lifted_symbol(old_name)
-        self._register_global_axiom(old_name, new_name)
-        return self.mgr.Function(new_name, args)
+        func = self.mgr.Function(new_name, c_nodes)
+        if old_ret_type is BOOL:
+            return R(node=self.walk_and(None, guards + [func]), pending_guards=())
+        elif old_ret_type is NAT:
+            guards.append(self._nat_guard(formula))
+        return R(node=func, pending_guards=guards)
 
     def walk_forall(self, formula, args, **kwargs):
         qvars, _, guards = self.get_nat_guards(formula.quantifier_vars())
