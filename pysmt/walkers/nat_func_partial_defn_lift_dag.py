@@ -110,10 +110,3 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
 
     # def walk_lt(self, formula, args, **kwargs):
     #     return self.mgr.LT(args[0], args[1])
-
-    # Functions can also return a bool type!!! (God help me)
-    def walk_function(self, formula, args, guards=None **kwargs):
-        old_name = formula.function_name()
-        new_name = self._get_lifted_symbol(old_name)
-        self._register_global_axiom(old_name, new_name)
-        return self.mgr.Function(new_name, args)
