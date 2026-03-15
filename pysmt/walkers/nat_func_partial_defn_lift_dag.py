@@ -103,7 +103,10 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
 
     # Add guards to bool types whose arguments are not themselves bools
     def walk_equals(self, formula, args, **kwargs):
-        return self.mgr.Equals(args[0], args[1])
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+
+        eq = self.mgr.Equals(c_nodes[0], c_nodes[1])
+        return R(node=self.walk_and(None, guards + [eq]), pending_guards=())
 
     # def walk_le(self, formula, args, **kwargs):
     #     return self.mgr.LE(args[0], args[1])
