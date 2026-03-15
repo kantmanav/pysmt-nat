@@ -9,7 +9,7 @@ class R:
     node: FNode
     pending_guards: tuple[FNode, ...]
 
-class NatVarLiftDagWalker(NatVarLiftDagWalker):
+class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
     def __init__(self, env=None, invalidate_memoization=None):
         IdentityDagWalker.__init__(self,
                            env=env,

@@ -21,7 +21,7 @@ from pysmt.decorators import clear_pending_pop
 from pysmt.exceptions import (SolverReturnedUnknownResultError, PysmtValueError,
                               SolverNotConfiguredForUnsatCoresError,
                               PysmtTypeError, SolverStatusError)
-from pysmt.walkers.nat_var_lift_dag import NatVarLiftDagWalker
+from pysmt.walkers.nat_func_partial_defn_lift_dag import NatFuncPartialDefnLiftDagWalker
 
 class Solver(object):
     """Represents a generic SMT Solver."""
@@ -95,8 +95,8 @@ class Solver(object):
         """
         assert formula in self.environment.formula_manager, \
                "Formula does not belong to the current Formula Manager"
-        walker = NatVarLiftDagWalker(env=self.environment)
-        formula = walker.walk(formula)
+        walker = NatFuncPartialDefnLiftDagWalker(env=self.environment)
+        formula = walker.translate(formula)
 
         if not self.options.incremental:
             # If not incremental, we only need to assert and solve.
