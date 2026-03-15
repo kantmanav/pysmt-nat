@@ -1,6 +1,13 @@
 from pysmt.walkers.identitydag import IdentityDagWalker
 from pysmt.walkers.nat_var_lift_dag import NatVarLiftDagWalker
 from pysmt.typing import INT, NAT, FunctionType
+from pysmt.fnode import FNode
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class R:
+    node: FNode
+    pending_guards: tuple[FNode, ...]
 
 class NatVarLiftDagWalker(NatVarLiftDagWalker):
     def __init__(self, env=None, invalidate_memoization=None):
@@ -9,6 +16,7 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
                            invalidate_memoization=invalidate_memoization)
         self.mgr = self.env.formula_manager
         self.lifted_symbols = {}
+        self.func_guards = []
         self.identity_dag_walker = IdentityDagWalker(env=self.env)
 
     def _lift_type(self, type_):
@@ -44,11 +52,8 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
             return self.memoization[formula]
 
         fvars = list(formula.get_free_variables())
-        fvars, fvar_subs, guards = self.get_var_nat_guards(fvars)
-        conjuncts = []
-        conjuncts.append(formula.substitute(fvar_subs))
-        conjuncts.extend(guards)
-        formula = self.walk_and(None, conjuncts)
+        _, _, guards = self.get_nat_guards(fvars)
+        formula = self.walk_and(None, [formula] + guards)
 
         res = self.iter_walk(formula, **kwargs)
 
@@ -63,7 +68,7 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
             self._register_global_axiom(formula, lifted)
         return lifted
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_function(self, formula, args, guards=None **kwargs):
         old_name = formula.function_name()
         new_name = self._get_lifted_symbol(old_name)
         self._register_global_axiom(old_name, new_name)
@@ -83,3 +88,20 @@ class NatVarLiftDagWalker(NatVarLiftDagWalker):
         if not guards:
             return self.mgr.Exists(qvars, args[0])
         return self.mgr.Exists(qvars, self.walk_and(None, guards + [args[0]]))
+
+    # Add guards to bool types whose arguments are not themselves bools
+    def walk_equals(self, formula, args, **kwargs):
+        return self.mgr.Equals(args[0], args[1])
+
+    # def walk_le(self, formula, args, **kwargs):
+    #     return self.mgr.LE(args[0], args[1])
+
+    # def walk_lt(self, formula, args, **kwargs):
+    #     return self.mgr.LT(args[0], args[1])
+
+    # Functions can also return a bool type!!! (God help me)
+    def walk_function(self, formula, args, guards=None **kwargs):
+        old_name = formula.function_name()
+        new_name = self._get_lifted_symbol(old_name)
+        self._register_global_axiom(old_name, new_name)
+        return self.mgr.Function(new_name, args)
