@@ -15,7 +15,7 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
                            env=env,
                            invalidate_memoization=invalidate_memoization)
         self.mgr = self.env.formula_manager
-        self.lifted_symbols = {}
+        self._lifted_symbols = {}
         self.func_guards = []
         self.identity_dag_walker = IdentityDagWalker(env=self.env)
 
@@ -49,8 +49,13 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
 
     # Takes args of type R, extracts the nodes and guards for manipulation by walk_* methods
     def _get_child_nodes_and_guards(self, args):
-        nodes = [a.node for a in args]
-        guards = [g for a in args for g in a.pending_guards]
+        nodes, guards = [], []
+        for a in args:
+            if type(a) == FNode:
+                nodes.append(a)
+            elif type(a) == R:
+                nodes.append(a.node)
+                guards.extend(a.pending_guards)
         return nodes, guards
 
     def walk(self, formula, **kwargs):
@@ -80,14 +85,15 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
     def walk_function(self, formula, args, **kwargs):
         c_nodes, guards = self._get_child_nodes_and_guards(args)
 
-        old_name, old_ret_type = formula.function_name(), formula.symbol_type().return_type
+        old_name = formula.function_name()
+        old_ret_type = old_name.symbol_type().return_type
         new_name = self._get_lifted_symbol(old_name)
-        func = self.mgr.Function(new_name, c_nodes)
+        func_app = self.mgr.Function(new_name, c_nodes)
         if old_ret_type is BOOL:
-            return R(node=self.walk_and(None, guards + [func]), pending_guards=())
+            return R(node=self.walk_and(None, guards + [func_app]), pending_guards=())
         elif old_ret_type is NAT:
-            guards.append(self._nat_guard(formula))
-        return R(node=func, pending_guards=tuple(guards))
+            guards.append(self._nat_guard(func_app))
+        return R(node=func_app, pending_guards=tuple(guards))
 
     def walk_forall(self, formula, args, **kwargs):
         qvars, _, guards = self.get_nat_guards(formula.quantifier_vars())

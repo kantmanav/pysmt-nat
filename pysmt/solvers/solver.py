@@ -95,8 +95,6 @@ class Solver(object):
         """
         assert formula in self.environment.formula_manager, \
                "Formula does not belong to the current Formula Manager"
-        walker = NatFuncPartialDefnLiftDagWalker(env=self.environment)
-        formula = walker.translate(formula)
 
         if not self.options.incremental:
             # If not incremental, we only need to assert and solve.
