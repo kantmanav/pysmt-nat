@@ -77,23 +77,40 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
 
     def walk_symbol(self, formula, args, **kwargs):
         lifted = self._get_lifted_symbol(formula)
-        symbol_type = formula.symbol_type()
-        if symbol_type.is_function_type() and len(symbol_type.param_types) == 0:
-            self._register_global_axiom(formula, lifted)
         return R(node=lifted, pending_guards=())
 
-    def walk_function(self, formula, args, **kwargs):
+    def walk_int_constant(self, formula, args, **kwargs):
+        return R(node=self.mgr.Int(formula.constant_value()), pending_guards=())
+
+    def walk_and(self, formula, args, **kwargs):
+        return self.mgr.And(args)
+
+    def walk_or(self, formula, args, **kwargs):
+        return self.mgr.Or(args)
+
+    def walk_not(self, formula, args, **kwargs):
+        return self.mgr.Not(args[0])
+
+    def walk_iff(self, formula, args, **kwargs):
+        return self.mgr.Iff(args[0], args[1])
+
+    def walk_implies(self, formula, args, **kwargs):
+        return self.mgr.Implies(args[0], args[1])
+
+    def walk_equals(self, formula, args, **kwargs):
         c_nodes, guards = self._get_child_nodes_and_guards(args)
 
-        old_name = formula.function_name()
-        old_ret_type = old_name.symbol_type().return_type
-        new_name = self._get_lifted_symbol(old_name)
-        func_app = self.mgr.Function(new_name, c_nodes)
-        if old_ret_type is BOOL:
-            return R(node=self.walk_and(None, guards + [func_app]), pending_guards=())
-        elif old_ret_type is NAT:
-            guards.append(self._nat_guard(func_app))
-        return R(node=func_app, pending_guards=tuple(guards))
+        eq = self.mgr.Equals(c_nodes[0], c_nodes[1])
+        return R(node=self.walk_and(None, guards + [eq]), pending_guards=())
+
+    def walk_ite(self, formula, args, **kwargs):
+        return self.mgr.Ite(args[0], args[1], args[2])
+
+    def walk_le(self, formula, args, **kwargs):
+        return self.mgr.LE(args[0], args[1])
+
+    def walk_lt(self, formula, args, **kwargs):
+        return self.mgr.LT(args[0], args[1])
 
     def walk_forall(self, formula, args, **kwargs):
         qvars, _, guards = self.get_nat_guards(formula.quantifier_vars())
@@ -110,15 +127,30 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
             return self.mgr.Exists(qvars, args[0])
         return self.mgr.Exists(qvars, self.walk_and(None, guards + [args[0]]))
 
-    # Add guards to bool types whose arguments are not themselves bools
-    def walk_equals(self, formula, args, **kwargs):
+    def walk_plus(self, formula, args, **kwargs):
+        return self.mgr.Plus(args)
+
+    def walk_times(self, formula, args, **kwargs):
+        return self.mgr.Times(args)
+
+    def walk_pow(self, formula, args, **kwargs):
+        return self.mgr.Pow(args[0], args[1])
+
+    def walk_minus(self, formula, args, **kwargs):
+        return self.mgr.Minus(args[0], args[1])
+
+    def walk_function(self, formula, args, **kwargs):
         c_nodes, guards = self._get_child_nodes_and_guards(args)
 
-        eq = self.mgr.Equals(c_nodes[0], c_nodes[1])
-        return R(node=self.walk_and(None, guards + [eq]), pending_guards=())
+        old_name = formula.function_name()
+        old_ret_type = old_name.symbol_type().return_type
+        new_name = self._get_lifted_symbol(old_name)
+        func_app = self.mgr.Function(new_name, c_nodes)
+        if old_ret_type is BOOL:
+            return R(node=self.walk_and(None, guards + [func_app]), pending_guards=())
+        elif old_ret_type is NAT:
+            guards.append(self._nat_guard(func_app))
+        return R(node=func_app, pending_guards=tuple(guards))
 
-    # def walk_le(self, formula, args, **kwargs):
-    #     return self.mgr.LE(args[0], args[1])
-
-    # def walk_lt(self, formula, args, **kwargs):
-    #     return self.mgr.LT(args[0], args[1])
+    def walk_div(self, formula, args, **kwargs):
+        return self.mgr.Div(args[0], args[1])
