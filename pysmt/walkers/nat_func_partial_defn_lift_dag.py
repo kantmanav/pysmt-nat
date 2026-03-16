@@ -83,65 +83,80 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
         return R(node=self.mgr.Int(formula.constant_value()), pending_guards=())
 
     def walk_and(self, formula, args, **kwargs):
-        return self.mgr.And(args)
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.And(c_nodes), pending_guards=())
 
     def walk_or(self, formula, args, **kwargs):
-        return self.mgr.Or(args)
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Or(c_nodes), pending_guards=())
 
     def walk_not(self, formula, args, **kwargs):
-        return self.mgr.Not(args[0])
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Not(c_nodes[0]), pending_guards=())
 
     def walk_iff(self, formula, args, **kwargs):
-        return self.mgr.Iff(args[0], args[1])
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Iff(c_nodes[0], c_nodes[1]), pending_guards=())
 
     def walk_implies(self, formula, args, **kwargs):
-        return self.mgr.Implies(args[0], args[1])
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Implies(c_nodes[0], c_nodes[1]), pending_guards=())
 
     def walk_equals(self, formula, args, **kwargs):
         c_nodes, guards = self._get_child_nodes_and_guards(args)
-
         eq = self.mgr.Equals(c_nodes[0], c_nodes[1])
         return R(node=self.walk_and(None, guards + [eq]), pending_guards=())
 
     def walk_ite(self, formula, args, **kwargs):
-        return self.mgr.Ite(args[0], args[1], args[2])
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Ite(c_nodes[0], c_nodes[1], c_nodes[2]), pending_guards=())
 
     def walk_le(self, formula, args, **kwargs):
-        return self.mgr.LE(args[0], args[1])
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        le = self.mgr.LE(c_nodes[0], c_nodes[1])
+        return R(node=self.walk_and(None, guards + [le]), pending_guards=())
 
     def walk_lt(self, formula, args, **kwargs):
-        return self.mgr.LT(args[0], args[1])
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        lt = self.mgr.LT(c_nodes[0], c_nodes[1])
+        return R(node=self.walk_and(None, guards + [lt]), pending_guards=())
 
     def walk_forall(self, formula, args, **kwargs):
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
         qvars, _, guards = self.get_nat_guards(formula.quantifier_vars())
         if not guards:
-            return self.mgr.ForAll(qvars, args[0])
-        return self.mgr.ForAll(qvars,
+            return R(node=self.mgr.ForAll(qvars, c_nodes[0]), pending_guards=())
+        return R(node=self.mgr.ForAll(qvars,
                                self.walk_implies(None,
                                                  [self.walk_and(None, guards),
-                                                  args[0]]))
+                                                  args[0]])),
+                 pending_guards=())
 
     def walk_exists(self, formula, args, **kwargs):
+        c_nodes, _ = self._get_child_nodes_and_guards(args)
         qvars, _, guards = self.get_nat_guards(formula.quantifier_vars())
         if not guards:
-            return self.mgr.Exists(qvars, args[0])
-        return self.mgr.Exists(qvars, self.walk_and(None, guards + [args[0]]))
+            return R(node=self.mgr.Exists(qvars, c_nodes[0]), pending_guards=())
+        return R(node=self.mgr.Exists(qvars, self.walk_and(None, guards + [args[0]])), pending_guards=())
 
     def walk_plus(self, formula, args, **kwargs):
-        return self.mgr.Plus(args)
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Plus(c_nodes), pending_guards=guards)
 
     def walk_times(self, formula, args, **kwargs):
-        return self.mgr.Times(args)
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Times(c_nodes), pending_guards=guards)
 
     def walk_pow(self, formula, args, **kwargs):
-        return self.mgr.Pow(args[0], args[1])
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Pow(c_nodes[0], c_nodes[1]), pending_guards=guards)
 
     def walk_minus(self, formula, args, **kwargs):
-        return self.mgr.Minus(args[0], args[1])
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Minus(c_nodes[0], c_nodes[1]), pending_guards=guards)
 
     def walk_function(self, formula, args, **kwargs):
         c_nodes, guards = self._get_child_nodes_and_guards(args)
-
         old_name = formula.function_name()
         old_ret_type = old_name.symbol_type().return_type
         new_name = self._get_lifted_symbol(old_name)
@@ -153,4 +168,5 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
         return R(node=func_app, pending_guards=tuple(guards))
 
     def walk_div(self, formula, args, **kwargs):
-        return self.mgr.Div(args[0], args[1])
+        c_nodes, guards = self._get_child_nodes_and_guards(args)
+        return R(node=self.mgr.Div(c_nodes[0], c_nodes[1]), pending_guards=guards)
