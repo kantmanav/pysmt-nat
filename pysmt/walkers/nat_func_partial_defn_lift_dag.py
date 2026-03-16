@@ -19,6 +19,35 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
         self.func_guards = []
         self.identity_dag_walker = IdentityDagWalker(env=self.env)
 
+    # DAGWALKING METHODS
+    def _get_children(self, formula):
+        if type(formula) is FNode:
+            return formula.args()
+        return formula.node.args()
+
+    def _compute_node_result(self, formula, **kwargs):
+        """Apply function to the node and memoize the result.
+
+        Note: This function assumes that the results for the children
+              are already available.
+        """
+        key = self._get_key(formula, **kwargs)
+        if key not in self.memoization:
+            try:
+                if type(formula) is FNode:
+                    f = self.functions[formula.node_type()]
+                else:
+                    f = self.functions[formula.node.node_type()]
+            except KeyError:
+                f = self.walk_error
+
+            args = [self.memoization[self._get_key(s, **kwargs)] \
+                    for s in self._get_children(formula)]
+            self.memoization[key] = f(formula, args=args, **kwargs)
+        else:
+            pass
+
+    # LIFTING METHODS
     def _lift_type(self, type_):
         if type_ is NAT:
             return INT
@@ -58,6 +87,7 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
                 guards.extend(a.pending_guards)
         return nodes, guards
 
+    # WALKING METHODS
     def walk(self, formula, **kwargs):
         if formula in self.memoization:
             return self.memoization[formula]
@@ -82,9 +112,9 @@ class NatFuncPartialDefnLiftDagWalker(NatVarLiftDagWalker):
     def walk_int_constant(self, formula, args, **kwargs):
         return R(node=self.mgr.Int(formula.constant_value()), pending_guards=())
 
-    def walk_and(self, formula, args, **kwargs):
-        c_nodes, _ = self._get_child_nodes_and_guards(args)
-        return R(node=self.mgr.And(c_nodes), pending_guards=())
+    # def walk_and(self, formula, args, **kwargs):
+    #     c_nodes, _ = self._get_child_nodes_and_guards(args)
+    #     return R(node=self.mgr.And(c_nodes), pending_guards=())
 
     def walk_or(self, formula, args, **kwargs):
         c_nodes, _ = self._get_child_nodes_and_guards(args)
